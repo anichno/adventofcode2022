@@ -21,7 +21,7 @@ fn solve1(input: &[&str]) -> usize {
                 "R" => head.x += 1,
                 "D" => head.y -= 1,
                 "L" => head.x -= 1,
-                _ => panic!("invalid direction {}", dir),
+                _ => panic!("invalid direction {dir}"),
             }
 
             let distance = (head.x - tail.x).abs() + (head.y - tail.y).abs();
@@ -109,7 +109,7 @@ fn solve2(input: &[&str]) -> usize {
                 "R" => knots[0].x += 1,
                 "D" => knots[0].y -= 1,
                 "L" => knots[0].x -= 1,
-                _ => panic!("invalid direction {}", dir),
+                _ => panic!("invalid direction {dir}"),
             }
 
             fix_sub_knots(&mut knots, 1);
