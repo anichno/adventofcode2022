@@ -10,7 +10,7 @@ fn main() {
     let input: Vec<&str> = include_str!("input.txt").lines().collect();
 
     println!("part 1: {}", solve1(&input));
-    println!("part 2: {}", solve2(&input));
+    // println!("part 2: {}", solve2(&input));
 }
 
 #[cfg(test)]
