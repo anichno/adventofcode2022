@@ -1,0 +1,313 @@
+#[derive(Debug)]
+enum Jet {
+    Left,
+    Right,
+}
+
+fn parse_input(input: &str) -> Vec<Jet> {
+    let mut jets = Vec::new();
+    for dir in input.chars() {
+        jets.push(match dir {
+            '>' => Jet::Right,
+            '<' => Jet::Left,
+            _ => panic!("Invalid jet dir: {dir}"),
+        });
+    }
+
+    jets
+}
+
+// struct Chute {
+//     columns: [Vec<usize>; 7],
+//     offset: usize,
+// }
+
+#[derive(Clone, Copy)]
+enum Shape {
+    Dash,
+    Plus,
+    El,
+    Line,
+    Block,
+}
+
+#[derive(Debug)]
+struct Coord {
+    x: usize,
+    y: usize,
+}
+
+#[derive(Debug)]
+struct FallingRock {
+    rock_parts: Vec<Coord>,
+    left_bound: usize,
+    right_bound: usize,
+    bottom_bound: usize,
+}
+
+impl FallingRock {
+    fn spawn_rock(shape: Shape, height: usize) -> Self {
+        let bottom_bound = height + 4;
+        let left_bound = 2;
+        let rock_parts: Vec<Coord> = match shape {
+            Shape::Dash => (0..4)
+                .into_iter()
+                .map(|x| Coord {
+                    x: left_bound + x,
+                    y: bottom_bound,
+                })
+                .collect(),
+            Shape::Plus => {
+                let mut parts = vec![
+                    Coord {
+                        x: left_bound + 1,
+                        y: bottom_bound + 2,
+                    },
+                    Coord {
+                        x: left_bound + 1,
+                        y: bottom_bound,
+                    },
+                ];
+                parts.extend((0..3).into_iter().map(|x| Coord {
+                    x: left_bound + x,
+                    y: bottom_bound + 1,
+                }));
+                parts
+            }
+            Shape::El => vec![
+                Coord {
+                    x: left_bound + 2,
+                    y: bottom_bound + 2,
+                },
+                Coord {
+                    x: left_bound + 2,
+                    y: bottom_bound + 1,
+                },
+                Coord {
+                    x: left_bound + 0,
+                    y: bottom_bound,
+                },
+                Coord {
+                    x: left_bound + 1,
+                    y: bottom_bound,
+                },
+                Coord {
+                    x: left_bound + 2,
+                    y: bottom_bound,
+                },
+            ],
+            Shape::Line => (0..4)
+                .into_iter()
+                .map(|p| Coord {
+                    x: left_bound + 0,
+                    y: bottom_bound + p,
+                })
+                .collect(),
+            Shape::Block => vec![
+                Coord {
+                    x: left_bound + 0,
+                    y: bottom_bound,
+                },
+                Coord {
+                    x: left_bound + 1,
+                    y: bottom_bound,
+                },
+                Coord {
+                    x: left_bound + 0,
+                    y: bottom_bound + 1,
+                },
+                Coord {
+                    x: left_bound + 1,
+                    y: bottom_bound + 1,
+                },
+            ],
+        };
+
+        let right_bound = rock_parts.iter().map(|p| p.x).max().unwrap();
+        Self {
+            rock_parts,
+            left_bound,
+            right_bound,
+            bottom_bound,
+        }
+    }
+
+    fn shift_right(&mut self, floor_heights: &[usize]) {
+        if self.right_bound < 6 {
+            if !self
+                .rock_parts
+                .iter()
+                .filter(|p| p.x == self.right_bound)
+                .any(|p| p.y <= floor_heights[self.right_bound + 1])
+            {
+                for part in self.rock_parts.iter_mut() {
+                    part.x += 1;
+                }
+                self.left_bound += 1;
+                self.right_bound += 1;
+            }
+            // if !(0..6).filter(|)
+
+            // if !self
+            //     .rock_parts
+            //     .iter()
+            //     .enumerate()
+            //     .filter(|(x, p)| *x < 6 && p.x < 6 && p.x + 1 == x + 1)
+            //     .any(|(x, p)| p.y == floor_heights[x + 1])
+            // {
+            //     for part in self.rock_parts.iter_mut() {
+            //         part.x += 1;
+            //     }
+            //     self.left_bound += 1;
+            //     self.right_bound += 1;
+            // }
+        }
+    }
+
+    fn shift_left(&mut self, floor_heights: &[usize]) {
+        if self.left_bound > 0 {
+            if !self
+                .rock_parts
+                .iter()
+                .filter(|p| p.x == self.left_bound)
+                .any(|p| p.y <= floor_heights[self.left_bound - 1])
+            {
+                for part in self.rock_parts.iter_mut() {
+                    part.x -= 1;
+                }
+                self.left_bound -= 1;
+                self.right_bound -= 1;
+            }
+
+            // if !self
+            //     .rock_parts
+            //     .iter()
+            //     .enumerate()
+            //     .filter(|(x, p)| *x > 0 && p.x > 0 && p.x - 1 == x - 1)
+            //     .any(|(x, p)| p.y == floor_heights[x - 1])
+            // {
+            //     for part in self.rock_parts.iter_mut() {
+            //         part.x -= 1;
+            //     }
+            //     self.left_bound -= 1;
+            //     self.right_bound -= 1;
+            // }
+        }
+    }
+
+    fn can_fall(&self, floor_heights: &[usize]) -> bool {
+        for (x, height) in floor_heights.iter().copied().enumerate() {
+            for part in self.rock_parts.iter().filter(|p| p.x == x) {
+                if part.y == height + 1 {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    fn fall(&mut self, floor_heights: &[usize]) -> bool {
+        if self.can_fall(floor_heights) {
+            dbg!(&self);
+            for part in self.rock_parts.iter_mut() {
+                part.y -= 1;
+            }
+            self.bottom_bound -= 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn get_new_floor_heights(&self, floor_heights: &mut [usize]) {
+        for x in 0..7 {
+            if let Some(max) = self
+                .rock_parts
+                .iter()
+                .filter(|p| p.x == x)
+                .map(|p| p.y)
+                .max()
+            {
+                floor_heights[x] = floor_heights[x].max(max);
+            }
+        }
+    }
+}
+
+fn solve1(input: &str, num_rocks: usize) -> u32 {
+    let jets = parse_input(input);
+    let shapes = &[
+        Shape::Dash,
+        Shape::Plus,
+        Shape::El,
+        Shape::Line,
+        Shape::Block,
+    ];
+
+    let mut cur_jet = 0;
+    let mut cur_rock_num = 0;
+    let mut cur_floor_height = [0; 7];
+
+    while cur_rock_num < num_rocks {
+        // spawn rock
+        let max_height = *cur_floor_height.iter().max().unwrap();
+        let mut rock = FallingRock::spawn_rock(shapes[cur_rock_num % shapes.len()], max_height);
+
+        // loop shift and fall
+        loop {
+            // println!("{:?}", jets[cur_jet % jets.len()]);
+            match jets[cur_jet % jets.len()] {
+                Jet::Left => rock.shift_left(&cur_floor_height),
+                Jet::Right => rock.shift_right(&cur_floor_height),
+            }
+            cur_jet += 1;
+            // rock.fall(&cur_floor_height);
+            if !rock.fall(&cur_floor_height) {
+                //     // match jets[cur_jet % shapes.len()] {
+                //     //     Jet::Left => rock.shift_left(),
+                //     //     Jet::Right => rock.shift_right(),
+                //     // }
+                break;
+            }
+            // }
+            // while rock.can_fall(&cur_floor_height) {
+        }
+
+        rock.get_new_floor_heights(&mut cur_floor_height);
+        cur_rock_num += 1;
+        dbg!(cur_rock_num, cur_floor_height);
+        // }
+    }
+
+    dbg!(cur_floor_height);
+
+    todo!()
+}
+
+fn solve2(input: &str) -> u32 {
+    todo!()
+}
+
+fn main() {
+    let input = include_str!("input.txt").trim();
+
+    println!("part 1: {}", solve1(input, 2022));
+    // println!("part 2: {}", solve2(input));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const INPUT: &str = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
+
+    #[test]
+    fn test1() {
+        assert_eq!(solve1(INPUT, 2022), 3068)
+    }
+
+    #[test]
+    fn test2() {
+        assert_eq!(solve2(INPUT), 0)
+    }
+}
